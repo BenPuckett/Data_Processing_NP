@@ -61,14 +61,7 @@ while fileDirectory != "done":
         #   frequency bin, the second contians the values of the frequencies
         
         binSums = []
-        frequencies = []
-        
-        #   Initializing the binSums and frequencies arrays with zeroes
-        #   for the binSums and the frequencies for the frequencies array
-        
-        for index in range(0, 156):
-            binSums.append(0.0)
-            frequencies.append(index + 1)
+        dataLineCount = 0
         
         #   Now it processes each line in the file
         
@@ -76,6 +69,8 @@ while fileDirectory != "done":
             
             #   If the line starts with an asterisk, it means it's a comment
             #   line and should be ignored in the processing
+
+            frequencies = []
             
             if (line[0] == '*'):
                 print("Skipped a comment line in " + fileName)
@@ -83,21 +78,47 @@ while fileDirectory != "done":
             #   Otherwise, it's a data line and needs to be parsed
             
             else:
+
+                # Count the number of data lines
+                dataLineCount += 1
                 
                 #   The line's values are split into a list, where the
                 #   delimiter is a space
-                
+                                
                 partsOfLine = line.split()
+
+                # Data Bin Count
+                binCount = int(partsOfLine[8]) # Number of data points
                 
                 #   The actual data values we want are now added to the binSums
                 #   list, to get the sum of each bin over the integrated period
                 
-                for i in range(0, 156):
+                for i in range(0, binCount):
                     try:
-                        binSums[i] += float(partsOfLine[i+9])
+                        
+                        # Add the bin sums to the list
+                        if len(binSums) < binCount:
+                            binSums.append(float(partsOfLine[i+9]))
+                        else:
+                            binSums[i] += float(partsOfLine[i+9])
+                        
+                        # Calculate the frequency space
+                        centerFreq = float(partsOfLine[5]) # Center Frequency
+                        freqSpacing = float(partsOfLine[6]) # Frequency spacing
+                        freqStart = centerFreq - ((binCount / 2) * freqSpacing)
+                        
+                        # Build the frequency space
+                        currentFreq = freqStart + (i * freqSpacing)
+                        frequencies.append(currentFreq)
+                        
                     except ValueError:
                         continue 
-                
+
+        # Take the average of the bin data
+        if dataLineCount > 0:
+            for binID in range(0, len(binSums) - 1):
+                binSums[binID] = binSums[binID] / dataLineCount
+
         #   Printing a message to indicate that the file has been processed
         
         print(fileName + " processed successfully")
